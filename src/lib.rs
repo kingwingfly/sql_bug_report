@@ -42,8 +42,8 @@ impl ModelManager {
         }
     }
 
-    fn pool(&self) -> &PgPool {
-        &self.pool
+    fn pool(&self) -> PgPool {
+        self.pool.clone()
     }
     fn another(&self) -> Arc<RwLock<String>> {
         self.another.clone()
