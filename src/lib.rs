@@ -51,7 +51,7 @@ async fn pool_op(mm: &ModelManager) {
     mm.pool().acquire().await.unwrap();
 }
 
-// write to another database
+// do something on another field in ModelManager
 async fn another_op(mm: &ModelManager) {
     mm.another();
 }
