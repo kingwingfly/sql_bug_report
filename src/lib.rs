@@ -38,22 +38,12 @@ impl ModelManager {
         }
     }
 
-    fn pool(&self) -> PgPool {
-        self.pool.clone()
+    async fn pool(&self) {
+        self.pool.acquire().await.unwrap();
     }
-    fn another(&self) -> String {
-        self.another.clone()
+    async fn another(&self) {
+        println!("{}", self.another);
     }
-}
-
-// acqurie a connection from pool
-async fn pool_op(mm: &ModelManager) {
-    mm.pool().acquire().await.unwrap();
-}
-
-// do something on another field in ModelManager
-async fn another_op(mm: &ModelManager) {
-    mm.another();
 }
 
 #[cfg(test)]
@@ -63,12 +53,12 @@ mod tests {
     #[tokio::test]
     async fn test1() {
         let mm = init_test().await;
-        pool_op(&mm).await;
+        mm.pool().await;
     }
 
     #[tokio::test]
     async fn test2() {
         let mm = init_test().await;
-        another_op(&mm).await;
+        mm.another().await;
     }
 }
