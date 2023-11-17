@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use sqlx::postgres::{PgPool, PgPoolOptions};
 use std::sync::Arc;
 use tokio::sync::OnceCell;
@@ -6,6 +8,7 @@ use tokio::sync::RwLock;
 const DATABASE_URL: &str = "postgres://postgres:postgres@localhost:5432/postgres";
 static INIT: OnceCell<ModelManager> = OnceCell::const_new();
 
+/// Init ModelManager for test, so that all the test func use the same ModelManager
 async fn init_test() -> ModelManager {
     let mm = INIT
         .get_or_init(|| async {
@@ -18,7 +21,10 @@ async fn init_test() -> ModelManager {
 
 #[derive(Clone)]
 struct ModelManager {
+    // postgres connection pool
     pool: PgPool,
+    // maybe I also need another database's connection here
+    // for example, `agdb`, which is a graph database, need `Arc` and `RwLock` to share between threads
     another: Arc<RwLock<String>>,
 }
 
@@ -44,10 +50,12 @@ impl ModelManager {
     }
 }
 
+// acqurie a connection from pool
 async fn pool_op(mm: &ModelManager) {
     mm.pool().acquire().await.unwrap();
 }
 
+// write to another database
 async fn another_op(mm: &ModelManager) {
     mm.another().write().await.push_str("hello");
 }
