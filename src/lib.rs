@@ -1,9 +1,7 @@
 #![allow(dead_code)]
 
 use sqlx::postgres::{PgPool, PgPoolOptions};
-use std::sync::Arc;
 use tokio::sync::OnceCell;
-use tokio::sync::RwLock;
 
 const DATABASE_URL: &str = "postgres://postgres:postgres@localhost:5432/postgres";
 static INIT: OnceCell<ModelManager> = OnceCell::const_new();
@@ -23,9 +21,7 @@ async fn init_test() -> ModelManager {
 struct ModelManager {
     // postgres connection pool
     pool: PgPool,
-    // maybe I also need another database's connection here
-    // for example, `agdb`, which is a graph database, need `Arc` and `RwLock` to share between threads
-    another: Arc<RwLock<String>>,
+    another: String,
 }
 
 impl ModelManager {
@@ -38,14 +34,14 @@ impl ModelManager {
             .unwrap();
         Self {
             pool,
-            another: Arc::new(RwLock::new("".to_string())),
+            another: "".to_string(),
         }
     }
 
     fn pool(&self) -> PgPool {
         self.pool.clone()
     }
-    fn another(&self) -> Arc<RwLock<String>> {
+    fn another(&self) -> String {
         self.another.clone()
     }
 }
@@ -57,7 +53,7 @@ async fn pool_op(mm: &ModelManager) {
 
 // write to another database
 async fn another_op(mm: &ModelManager) {
-    mm.another().write().await.push_str("hello");
+    mm.another();
 }
 
 #[cfg(test)]
