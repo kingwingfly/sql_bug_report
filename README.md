@@ -17,9 +17,9 @@ test tests::test1 ... FAILED
 
 
 # Reason
-This is because every tokio::test runs in a separate runtime, but share the same OnceCell initialed by one of them.
+This is because every tokio::test runs in a separate runtime, but share the same OnceCell initialized by one of them.
 
-If the runtime which initialed the OnceCell ends and dropped, the left runtimes can nerver get the OnceCell.
+If the runtime which initialized the OnceCell ends and dropped, the left runtimes can nerver get the OnceCell.
 
 Fix in this way:
 ```rust
@@ -29,4 +29,4 @@ async fn test2() {
     tokio::time::sleep(std::time::Duration::from_secs(1)).await;
 }
 ```
-This can ensure the runtime which initialed the OnceCell is still alive when the left runtimes try to get the OnceCell.
+This can ensure the runtime which initialized the OnceCell is still alive when the left runtimes try to get the OnceCell.
