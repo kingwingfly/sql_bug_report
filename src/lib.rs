@@ -3,7 +3,7 @@
 use sqlx::postgres::{PgPool, PgPoolOptions};
 use tokio::sync::OnceCell;
 
-const DATABASE_URL: &str = "postgres://postgres:postgres@localhost:5432/postgres";
+const PG_URL: &str = "postgres://postgres:postgres@localhost:5432/postgres";
 static INIT: OnceCell<ModelManager> = OnceCell::const_new();
 
 /// Init ModelManager for test, so that all the test func use the same ModelManager
@@ -20,29 +20,25 @@ async fn init_test() -> ModelManager {
 #[derive(Clone)]
 struct ModelManager {
     // postgres connection pool
-    pool: PgPool,
-    another: String,
+    pg: PgPool,
 }
 
 impl ModelManager {
     async fn new() -> Self {
-        let pool = PgPoolOptions::new()
+        let pg = PgPoolOptions::new()
             .acquire_timeout(std::time::Duration::from_secs(2))
             .max_connections(4)
-            .connect(DATABASE_URL)
+            .connect(PG_URL)
             .await
             .unwrap();
-        Self {
-            pool,
-            another: "".to_string(),
-        }
+        Self { pg }
     }
 
-    async fn pool(&self) {
-        self.pool.acquire().await.unwrap();
+    async fn pg(&self) {
+        self.pg.acquire().await.unwrap();
     }
-    async fn another(&self) {
-        println!("{}", self.another);
+    async fn foo(&self) {
+        println!("foo");
     }
 }
 
@@ -53,12 +49,11 @@ mod tests {
     #[tokio::test]
     async fn test1() {
         let mm = init_test().await;
-        mm.pool().await;
+        mm.pg().await;
     }
 
     #[tokio::test]
     async fn test2() {
-        let mm = init_test().await;
-        mm.another().await;
+        let _mm = init_test().await;
     }
 }
