@@ -1257,6 +1257,7 @@ dependencies = [
 name = "sqlx_bug_report"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "sqlx",
  "tokio",
 ]

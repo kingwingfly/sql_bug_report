@@ -2,7 +2,7 @@
 1. Start postgresql
 2. Test a few times
 ```sh
-cargo test
+cargo test bug_test
 ```
 It ramdomly fails with the following error `PoolTimedOut`:
 ```sh
@@ -15,18 +15,49 @@ note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 test tests::test1 ... FAILED
 ```
 
-
 # Reason
 This is because every tokio::test runs in a separate runtime, but share the same OnceCell initialized by one of them.
 
-If the runtime which initialized the OnceCell ends and dropped, the left runtimes can nerver get the OnceCell.
+If the runtime which initialized the OnceCell exits and the IO resources just stop working, the left runtimes can nerver get the OnceCell.
 
+# Fix
 Fix in this way:
 ```rust
-#[tokio::test]
-async fn test2() {
-    let _mm = init_test().await;
-    tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+use lazy_static::lazy_static;
+
+pub fn test_rt() -> &'static tokio::runtime::Runtime {
+    lazy_static! {
+        static ref RT: tokio::runtime::Runtime = {
+            let rt = tokio::runtime::Builder::new_current_thread()
+                .enable_all()
+                .build()
+                .unwrap();
+            rt.block_on(init_test());
+            rt
+        };
+    }
+    &RT
+}
+
+/// All the test about database should be run in this function.
+/// Because we need to share the same database connection,
+/// which cannot keep alive between runtimes.
+/// In other words, if the database connection is closed
+/// due to the end of the runtime which initialized it, the next runtimes will fail.
+pub fn run_test<F: std::future::Future>(f: F) -> F::Output {
+    test_rt().block_on(f)
+}
+#[test]
+fn test() {
+    // run all test in run_test()
+    run_test(async {
+        let _mm = init_test().await;
+    })
 }
 ```
-This can ensure the runtime which initialized the OnceCell is still alive when the left runtimes try to get the OnceCell.
+This can ensure the all the tests share the same runtime.
+
+You can try:
+```
+cargo test fixed_test
+```

@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+mod fixed;
 
 use sqlx::postgres::{PgPool, PgPoolOptions};
 use tokio::sync::OnceCell;
@@ -43,17 +44,22 @@ impl ModelManager {
 }
 
 #[cfg(test)]
-mod tests {
+mod tests1 {
     use super::*;
 
     #[tokio::test]
-    async fn test1() {
+    async fn bug_test() {
         let mm = init_test().await;
         mm.pg().await;
     }
+}
+
+#[cfg(test)]
+mod tests2 {
+    use super::*;
 
     #[tokio::test]
-    async fn test2() {
+    async fn bug_test() {
         let _mm = init_test().await;
     }
 }
