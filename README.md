@@ -14,3 +14,19 @@ called `Result::unwrap()` on an `Err` value: PoolTimedOut
 note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 test tests::test1 ... FAILED
 ```
+
+
+# Reason
+This is because every tokio::test runs in a separate runtime, but share the same OnceCell initialed by one of them.
+
+If the runtime which initialed the OnceCell ends and dropped, the left runtimes can nerver get the OnceCell.
+
+Fix in this way:
+```rust
+#[tokio::test]
+async fn test2() {
+    let _mm = init_test().await;
+    tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+}
+```
+This can ensure the runtime which initialed the OnceCell is still alive when the left runtimes try to get the OnceCell.
